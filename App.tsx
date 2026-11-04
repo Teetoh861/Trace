@@ -1,7 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, LinkingOptions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -38,6 +38,25 @@ function Tabs() {
     </Tab.Navigator>
   );
 }
+
+const linking: LinkingOptions<RootParams> = {
+  prefixes: [],
+  config: {
+    screens: {
+      Tabs: { screens: { Home: '', Cases: 'cases', Profile: 'profile' } },
+      Describe: 'new/describe',
+      Docs: 'new/documents',
+      Scope: 'new/scope',
+      Review: 'new/review',
+      Quote: 'new/quote',
+      Payment: 'new/payment',
+      Case: 'case/:id',
+      Report: 'report/:id',
+      Finding: 'report/:id/finding/:fid',
+      Grades: 'grades',
+    },
+  } as LinkingOptions<RootParams>['config'],
+};
 
 const theme = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: colors.cream } };
 
@@ -76,7 +95,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StoreProvider>
-        <NavigationContainer theme={theme}>
+        <NavigationContainer theme={theme} linking={linking} documentTitle={{ formatter: () => 'TRACE' }}>
           <StatusBar style="dark" />
           <Stack.Navigator screenOptions={header}>
             <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />

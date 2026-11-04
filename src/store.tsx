@@ -8,12 +8,13 @@ export type Draft = {
   type: string;
   size: string;
   docs: string[];
+  files: Record<string, string>; // document type -> attached file name
   checks: CheckId[];
   notes: string;
 };
 
 const emptyDraft: Draft = {
-  address: '', type: 'Land', size: '', docs: [], checks: ['title', 'survey'], notes: '',
+  address: '', type: 'Land', size: '', docs: [], files: {}, checks: ['title', 'survey'], notes: '',
 };
 
 type Ctx = {

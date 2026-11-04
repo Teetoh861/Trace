@@ -103,6 +103,10 @@ export type CaseT = {
   overall: GradeKey;
 };
 
+// Site inspection photos shown on the "Physical inspection" finding.
+// Add up to 3 image URLs (or hosted file paths such as '/photos/site1.jpg') to replace the placeholders.
+export const SITE_PHOTOS: string[] = [];
+
 export const naira = (n: number) => '₦' + n.toLocaleString('en-NG');
 
 export function buildFindings(checks: CheckId[]): Finding[] {
