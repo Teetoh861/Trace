@@ -1,9 +1,9 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Screen } from './Layout';
-import { Body, Button, Card, Eyebrow, GradePill, H1, H2, Muted, Row } from '../ui';
+import { Body, Button, Card, Eyebrow, GradePill, H1, H2, Muted, PhotoStrip, Row, SurveyMap, Tag } from '../ui';
 import { useStore } from '../store';
-import { GRADES, GradeKey, INVESTIGATION_STEPS, naira } from '../data';
+import { GRADES, GradeKey, INVESTIGATION_STEPS, SITE_PHOTOS, naira } from '../data';
 import { colors, fonts } from '../theme';
 import { P } from '../nav';
 
@@ -100,6 +100,21 @@ export function FindingScreen({ route }: P<'Finding'>) {
     <Screen>
       <H1 style={{ marginBottom: 12 }}>{f.title}</H1>
       <GradePill grade={f.grade} />
+      {f.grade === 'discrepancy' && (
+        <View style={{ marginTop: 10 }}>
+          <Tag label="Title in dispute" />
+        </View>
+      )}
+      {f.id === 'f-survey' && (
+        <View style={{ marginTop: 16 }}>
+          <SurveyMap />
+        </View>
+      )}
+      {f.id === 'f-phy' && (
+        <View style={{ marginTop: 16 }}>
+          <PhotoStrip photos={SITE_PHOTOS} />
+        </View>
+      )}
       <Body style={{ marginTop: 16 }}>{f.detail}</Body>
       <Card style={{ marginTop: 20 }}>
         <Muted>What this grade means</Muted>

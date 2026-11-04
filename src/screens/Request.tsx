@@ -1,5 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
 import { Screen } from './Layout';
 import { Body, Button, Card, Chip, Field, H1, Muted, Progress, Row, GradePill } from '../ui';
 import { useStore } from '../store';
@@ -30,18 +31,52 @@ export function Describe({ navigation }: P<'Describe'>) {
 
 export function Docs({ navigation }: P<'Docs'>) {
   const { draft, setDraft } = useStore();
-  const toggle = (d: string) =>
-    setDraft({ docs: draft.docs.includes(d) ? draft.docs.filter((x) => x !== d) : [...draft.docs, d] });
+  const toggle = (d: string) => {
+    if (draft.docs.includes(d)) {
+      const { [d]: _removed, ...rest } = draft.files;
+      setDraft({ docs: draft.docs.filter((x) => x !== d), files: rest });
+    } else {
+      setDraft({ docs: [...draft.docs, d] });
+    }
+  };
+  const attach = async (d: string) => {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*'], copyToCacheDirectory: false,
+      });
+      if (!res.canceled && res.assets?.[0]) setDraft({ files: { ...draft.files, [d]: res.assets[0].name } });
+    } catch {
+      /* picker unavailable: leave the document unattached */
+    }
+  };
   return (
     <Screen footer={<Button title="Continue" onPress={() => navigation.navigate('Scope')} />}>
       <Progress step={2} total={4} />
       <H1 style={{ marginBottom: 6 }}>What documents do you have?</H1>
-      <Muted style={{ marginBottom: 20 }}>Select what the seller gave you. You can proceed without any.</Muted>
+      <Muted style={{ marginBottom: 20 }}>Select what the seller gave you, then attach a scan or photo. You can proceed without any.</Muted>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 12 }}>
         {DOC_TYPES.map((d) => (
           <Chip key={d} label={d} active={draft.docs.includes(d)} onPress={() => toggle(d)} />
         ))}
       </View>
+      {draft.docs.length > 0 && (
+        <View style={{ marginBottom: 16 }}>
+          <Muted style={{ marginBottom: 8 }}>Attach your documents (PDF or image)</Muted>
+          {draft.docs.map((d) => (
+            <Card key={d} style={{ marginBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flex: 1, paddingRight: 10 }}>
+                <Text style={{ fontFamily: fonts.bodyMed, fontSize: 14, color: colors.ink }}>{d}</Text>
+                <Muted>{draft.files[d] ? '✓ ' + draft.files[d] : 'No file attached'}</Muted>
+              </View>
+              <Pressable onPress={() => attach(d)}>
+                <Text style={{ fontFamily: fonts.bodyBold, fontSize: 14, color: colors.rust }}>
+                  {draft.files[d] ? 'Replace' : 'Attach'}
+                </Text>
+              </Pressable>
+            </Card>
+          ))}
+        </View>
+      )}
       <Field label="Notes for the investigator (optional)" multiline placeholder="Anything unusual, names of sellers, agent details…" value={draft.notes} onChangeText={(notes) => setDraft({ notes })} />
     </Screen>
   );
@@ -85,7 +120,7 @@ export function Review({ navigation }: P<'Review'>) {
         <Row left="Property" right={draft.address} />
         <Row left="Type" right={draft.type} />
         <Row left="Size" right={draft.size || '—'} />
-        <Row left="Documents" right={String(draft.docs.length)} />
+        <Row left="Documents" right={`${draft.docs.length} (${Object.keys(draft.files).length} attached)`} />
         <Row left="Checks" right={String(draft.checks.length)} />
       </Card>
       {draft.notes ? (
