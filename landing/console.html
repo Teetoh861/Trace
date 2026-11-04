@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TRACE Console – Investigator workspace</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23B4472B'/%3E%3Cpath d='M8 22V10h16' stroke='%23fff' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--rust:#B4472B;--rust-d:#8F3420;--cream:#F6F0E6;--surface:#fff;--ink:#1D1B19;--muted:#6F6A63;--line:#E4DCCF;--sand:#EFE6D6;--green:#3E7D4F;--amber:#C98A1B;--red:#B3261E;--blue:#3A5F8F;--grey:#6F6A63;--display:'Bricolage Grotesque',system-ui,sans-serif;--body:'Instrument Sans',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:var(--cream);color:var(--ink);font-size:14.5px;min-height:100vh}
+button{font-family:inherit;cursor:pointer}
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+aside.side{background:var(--ink);color:#cfc8bd;padding:22px 16px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;z-index:60}
+.logo{font-family:var(--display);font-weight:800;letter-spacing:.14em;color:#fff;font-size:20px;margin:0 8px 4px}
+.sub{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#8d857a;margin:0 8px 22px}
+.nav-i{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:10px;font-weight:500;color:#cfc8bd;background:none;border:0;text-align:left;font-size:14.5px}
+.nav-i:hover{background:#2a2622}.nav-i.on{background:#3a322c;color:#fff}
+.nav-i .ct{font-size:12px;background:var(--rust);color:#fff;border-radius:999px;padding:1px 8px}
+.who{margin-top:auto;padding:12px;border-radius:12px;background:#2a2622;font-size:13px}
+.who b{display:block;color:#fff;font-size:14px}
+.role{margin-top:10px;display:flex;border-radius:9px;overflow:hidden;border:1px solid #4a4239}
+.role button{flex:1;padding:7px 4px;background:none;border:0;color:#cfc8bd;font-size:12px;font-weight:600}
+.role button.on{background:var(--rust);color:#fff}
+main{padding:28px 32px 60px;min-width:0}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+h1{font-family:var(--display);font-size:30px;letter-spacing:-.02em}
+.tagline{color:var(--muted);margin-top:4px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+.stat small{color:var(--muted);font-size:12.5px}.stat b{display:block;font-family:var(--display);font-size:28px;margin-top:2px}
+.tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 15px;font-size:13.5px;font-weight:500;color:var(--ink)}
+.tab.on{background:var(--rust);border-color:var(--rust);color:#fff}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:13px 16px;background:#faf6ef;border-bottom:1px solid var(--line);font-weight:600}
+td{padding:14px 16px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr.row{cursor:pointer}tr.row:hover{background:#fbf8f2}tr:last-child td{border-bottom:0}
+.addr{font-weight:600}.id{color:var(--muted);font-size:12.5px}
+.chip{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.s-new{background:#3A5F8F1A;color:var(--blue)}.s-prog{background:#C98A1B1F;color:#9a6a10}.s-rev{background:#6F6A631F;color:var(--grey)}.s-done{background:#3E7D4F1A;color:var(--green)}
+.sla{font-variant-numeric:tabular-nums;font-weight:600}.sla.warn{color:var(--amber)}.sla.bad{color:var(--red)}
+.avatar{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--sand);font-size:11px;font-weight:700;margin-right:8px;vertical-align:middle}
+.scrim{position:fixed;inset:0;background:rgba(29,27,25,.4);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(620px,100%);background:var(--cream);z-index:50;transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1);overflow-y:auto;box-shadow:-20px 0 50px -20px rgba(0,0,0,.4)}
+.drawer.on{transform:none}
+.dh{position:sticky;top:0;background:var(--cream);padding:20px 26px 14px;border-bottom:1px solid var(--line);z-index:2;display:flex;justify-content:space-between;gap:12px}
+.dh h2{font-family:var(--display);font-size:22px;line-height:1.15}
+.x{background:none;border:1px solid var(--line);border-radius:10px;width:36px;height:36px;font-size:18px}
+.db{padding:20px 26px 40px}
+.sec{margin-bottom:24px}
+.sec h3{font-family:var(--display);font-size:16px;margin-bottom:10px}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kv div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.kv small{color:var(--muted);display:block;font-size:12px}
+.doc{display:flex;justify-content:space-between;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.doc span{color:var(--muted);font-size:12.5px}
+.chk{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+.chk-h{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.chk-h b{font-family:var(--display);font-size:15px}
+select,textarea{font-family:inherit;font-size:14px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff;color:var(--ink);width:100%}
+textarea{min-height:64px;resize:vertical;margin-top:8px}
+.grades{display:flex;flex-wrap:wrap;gap:6px}
+.g{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 11px 5px 6px;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:6px}
+.g i{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;color:#fff;font-style:normal;font-size:11px}
+.g.sel{border-width:2px;box-shadow:0 0 0 3px rgba(0,0,0,.04)}
+.err{color:var(--red);font-size:12.5px;margin-top:6px;display:none}
+.btn{background:var(--rust);color:#fff;border:0;border-radius:12px;padding:11px 18px;font-weight:600;font-size:14.5px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.log{border-left:2px solid var(--line);padding-left:14px}
+.log div{font-size:13px;margin-bottom:10px;color:var(--muted)}.log b{color:var(--ink)}
+.photo{display:inline-block;width:92px;height:70px;border-radius:10px;background:var(--sand);border:1px solid var(--line);margin:0 8px 8px 0;font-size:11px;color:var(--muted);padding:8px;vertical-align:top}
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,30px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:12px;opacity:0;transition:all .3s;z-index:90;font-weight:500}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media(max-width:900px){.app{grid-template-columns:1fr}aside.side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center}.who{margin:0}.stats{grid-template-columns:1fr 1fr}main{padding:20px 16px}.hide-s{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="side">
+  <div class="logo">TRACE</div><div class="sub">Console</div>
+  <button class="nav-i on">Case queue <span class="ct" id="qct">0</span></button>
+  <button class="nav-i" onclick="toast('Reports library is part of the full build')">Released reports</button>
+  <button class="nav-i" onclick="toast('Partner payouts are part of the full build')">Partners &amp; payouts</button>
+  <button class="nav-i" onclick="toast('Pricing config is part of the full build')">Pricing</button>
+  <button class="nav-i" onclick="toast('Audit log export is part of the full build')">Audit log</button>
+  <div class="who"><b id="whoName">Ada Okafor</b><span id="whoRole">Investigator</span>
+    <div class="role"><button id="rI" class="on" onclick="setRole('inv')">Investigator</button><button id="rR" onclick="setRole('rev')">Reviewer</button></div>
+  </div>
+</aside>
+<main>
+  <div class="top"><div><h1>Case queue</h1><p class="tagline">Work cases, grade findings with a reason, and send them for a second review.</p></div><a href="/" style="color:var(--rust);font-weight:600;text-decoration:none">← Back to site</a></div>
+  <div class="stats">
+    <div class="stat"><small>Open cases</small><b id="sOpen">0</b></div>
+    <div class="stat"><small>Due in 24 hours</small><b id="sSoon">0</b></div>
+    <div class="stat"><small>Awaiting review</small><b id="sRev">0</b></div>
+    <div class="stat"><small>Released today</small><b id="sDone">0</b></div>
+  </div>
+  <div class="tabs" id="tabs"></div>
+  <div class="panel"><table><thead><tr><th>Case</th><th class="hide-s">Checks</th><th>Status</th><th>Assignee</th><th>SLA</th></tr></thead><tbody id="tbody"></tbody></table></div>
+</main>
+</div>
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="Case detail"></aside>
+<div class="toast" id="toast"></div>
+
+<script>
+var GR={confirmed:{l:'Confirmed by available records',c:'#3E7D4F',i:'✓'},noadverse:{l:'No adverse record identified',c:'#3A5F8F',i:'○'},discrepancy:{l:'Discrepancy identified',c:'#B3261E',i:'!'},unable:{l:'Unable to establish',c:'#C98A1B',i:'?'},further:{l:'Further investigation required',c:'#6F6A63',i:'→'}};
+var CK={title:'Title record search',survey:'Survey verification',encumbrance:'Encumbrance & litigation',ownership:'Ownership history',physical:'Physical inspection'};
+var STATES=['Not started','In progress','Done'];
+var H=3600e3,now=Date.now();
+function mk(id,addr,checks,status,who,dueH,client,docs){var f={};checks.forEach(function(c){f[c]={state:status==='new'?0:1,grade:null,why:''}});return{id:id,addr:addr,checks:checks,status:status,who:who,due:now+dueH*H,client:client,docs:docs,f:f,log:[{t:'Case created',by:'System',at:now-30*H}],released:false}}
+var cases=[
+ mk('TR-20431','12 Admiralty Way, Lekki Phase 1',['title','survey','physical'],'new','Ada Okafor',70,'Tunde A.',['C of O','Survey plan']),
+ mk('TR-20429','Plot 8, Ibeju-Lekki, Lagos',['title','encumbrance','ownership'],'prog','Ada Okafor',9,'Ngozi E.',['Deed of Assignment','Receipt']),
+ mk('TR-20427','Block 4, Magodo GRA Phase 2',['survey','physical'],'prog','Emeka Obi',27,'Femi B.',['Survey plan']),
+ mk('TR-20424','15 Bourdillon Road, Ikoyi',['title','survey','encumbrance','ownership','physical'],'rev','Ada Okafor',-2,'Chidi O.',['C of O','Governor\'s Consent','Survey plan']),
+ mk('TR-20421','Farmland, Epe, Lagos',['title','survey'],'prog','Emeka Obi',4,'Amaka N.',['Excision / Gazette']),
+ mk('TR-20418','Plot 14, Okun Ajah, Lagos',['title','survey','encumbrance','ownership','physical'],'done','Ada Okafor',-26,'Demo user',['C of O','Survey plan'])
+];
+// preload demo state
+(function(){
+ var a=cases[3];['title','survey','encumbrance','ownership','physical'].forEach(function(k){a.f[k].state=2});
+ a.f.title.grade='confirmed';a.f.title.why='C of O number and holder match registry entry.';a.f.survey.grade='discrepancy';a.f.survey.why='Plan offset ~40 m NW of Surveyor-General record.';
+ a.f.encumbrance.grade='noadverse';a.f.encumbrance.why='No entries in High Court or registry indexes searched.';a.f.ownership.grade='unable';a.f.ownership.why='Pre-2009 volumes not digitised.';a.f.physical.grade='further';a.f.physical.why='Fresh construction on north edge.';
+ a.log.push({t:'Submitted for second review',by:'Ada Okafor',at:now-3*H});
+ var d=cases[5];Object.keys(d.f).forEach(function(k){d.f[k].state=2;d.f[k].grade='confirmed';d.f[k].why='Reviewed.'});d.released=true;d.log.push({t:'Released to client',by:'Emeka Obi',at:now-20*H});
+ var b=cases[1];b.f.title.state=2;b.f.title.grade='confirmed';b.f.title.why='Matches registry.';
+})();
+var role='inv',filter='all',open=null;
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function init(n){return n.split(' ').map(function(p){return p[0]}).join('')}
+function slaTxt(c){if(c.status==='done')return{t:'Released',cls:''};var ms=c.due-Date.now(),neg=ms<0,a=Math.abs(ms),h=Math.floor(a/H),m=Math.floor(a%H/6e4),s=Math.floor(a%6e4/1e3);
+ var t=(neg?'−':'')+(h>=48?Math.floor(h/24)+'d '+(h%24)+'h':h+'h '+String(m).padStart(2,'0')+'m '+(h<6?String(s).padStart(2,'0')+'s':''));
+ return{t:t,cls:neg||ms<6*H?'bad':ms<24*H?'warn':''}}
+function stChip(s){return{new:'<span class="chip s-new">New</span>',prog:'<span class="chip s-prog">In progress</span>',rev:'<span class="chip s-rev">Awaiting review</span>',done:'<span class="chip s-done">Released</span>'}[s]}
+function visible(){return cases.filter(function(c){if(filter==='mine')return c.who==='Ada Okafor';if(filter==='risk')return c.status!=='done'&&c.due-Date.now()<24*H;if(filter==='rev')return c.status==='rev';return true})}
+function render(){
+ var T=[['all','All cases'],['mine','Assigned to me'],['risk','At risk'],['rev','Awaiting review']];
+ document.getElementById('tabs').innerHTML=T.map(function(t){return'<button class="tab'+(filter===t[0]?' on':'')+'" onclick="setF(\''+t[0]+'\')">'+t[1]+'</button>'}).join('');
+ document.getElementById('tbody').innerHTML=visible().map(function(c){var s=slaTxt(c);return'<tr class="row" onclick="openC(\''+c.id+'\')"><td><div class="addr">'+esc(c.addr)+'</div><div class="id">'+c.id+' · '+esc(c.client)+'</div></td><td class="hide-s">'+c.checks.length+' checks</td><td>'+stChip(c.status)+'</td><td><span class="avatar">'+init(c.who)+'</span>'+esc(c.who)+'</td><td class="sla '+s.cls+'" data-id="'+c.id+'">'+s.t+'</td></tr>'}).join('')||'<tr><td colspan="5" style="padding:30px;color:var(--muted)">No cases here.</td></tr>';
+ var op=cases.filter(function(c){return c.status!=='done'});
+ document.getElementById('qct').textContent=op.length;document.getElementById('sOpen').textContent=op.length;
+ document.getElementById('sSoon').textContent=op.filter(function(c){return c.due-Date.now()<24*H}).length;
+ document.getElementById('sRev').textContent=cases.filter(function(c){return c.status==='rev'}).length;
+ document.getElementById('sDone').textContent=cases.filter(function(c){return c.status==='done'}).length;
+}
+function setF(f){filter=f;render()}
+function setRole(r){role=r;document.getElementById('rI').classList.toggle('on',r==='inv');document.getElementById('rR').classList.toggle('on',r==='rev');
+ document.getElementById('whoName').textContent=r==='inv'?'Ada Okafor':'Emeka Obi';document.getElementById('whoRole').textContent=r==='inv'?'Investigator':'Second reviewer';if(open)drawer(open);toast('Switched to '+(r==='inv'?'investigator':'reviewer')+' view')}
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(function(){t.classList.remove('on')},2200)}
+function find(id){return cases.filter(function(c){return c.id===id})[0]}
+function openC(id){open=id;drawer(id);document.getElementById('drawer').classList.add('on');document.getElementById('scrim').classList.add('on')}
+function closeD(){open=null;document.getElementById('drawer').classList.remove('on');document.getElementById('scrim').classList.remove('on')}
+document.getElementById('scrim').onclick=closeD;
+addEventListener('keydown',function(e){if(e.key==='Escape')closeD()});
+function readyToSubmit(c){return c.checks.every(function(k){var x=c.f[k];return x.state===2&&x.grade&&x.why.trim().length>=8})}
+function drawer(id){
+ var c=find(id),d=document.getElementById('drawer'),locked=c.status==='rev'||c.status==='done';
+ var photos=c.checks.indexOf('physical')>-1?'<div class="sec"><h3>Site evidence</h3><span class="photo">IMG_0412.jpg<br>6.4421°N 3.5017°E<br>14:02</span><span class="photo">IMG_0413.jpg<br>6.4421°N 3.5018°E<br>14:04</span><span class="photo">Beacon_N2.jpg<br>6.4423°N 3.5016°E<br>14:09</span></div>':'';
+ var checks=c.checks.map(function(k){var x=c.f[k];
+  var gb=Object.keys(GR).map(function(g){return'<button class="g'+(x.grade===g?' sel':'')+'" style="'+(x.grade===g?'border-color:'+GR[g].c+';background:'+GR[g].c+'14':'')+'" '+(locked?'disabled':'')+' onclick="setG(\''+c.id+'\',\''+k+'\',\''+g+'\')"><i style="background:'+GR[g].c+'">'+GR[g].i+'</i>'+GR[g].l+'</button>'}).join('');
+  return'<div class="chk"><div class="chk-h"><b>'+CK[k]+'</b><select '+(locked?'disabled':'')+' style="width:auto" onchange="setS(\''+c.id+'\',\''+k+'\',this.value)">'+STATES.map(function(s,i){return'<option value="'+i+'"'+(x.state===i?' selected':'')+'>'+s+'</option>'}).join('')+'</select></div><div class="grades">'+gb+'</div><textarea '+(locked?'disabled':'')+' placeholder="Reason for this grade (required, shown to the second reviewer)" oninput="setW(\''+c.id+'\',\''+k+'\',this.value)">'+esc(x.why)+'</textarea></div>'}).join('');
+ var act='';
+ if(c.status==='done')act='<p style="color:var(--green);font-weight:600">✓ Released to client</p>';
+ else if(c.status==='rev')act=role==='rev'?'<div class="actions"><button class="btn" onclick="approve(\''+c.id+'\')">Approve &amp; release to client</button><button class="btn ghost" onclick="sendBack(\''+c.id+'\')">Send back to investigator</button></div>':'<p style="color:var(--muted)">Waiting for the second reviewer. Switch to the Reviewer view (bottom left) to approve.</p>';
+ else act='<div class="actions"><button class="btn" id="subBtn" '+(readyToSubmit(c)?'':'disabled')+' onclick="submitRev(\''+c.id+'\')">Submit for second review</button></div><div class="err" id="hint" style="display:'+(readyToSubmit(c)?'none':'block')+';color:var(--muted)">Every check needs to be Done, graded, and have a written reason before you can submit.</div>';
+ var logs=c.log.slice().reverse().map(function(l){var m=Math.round((Date.now()-l.at)/6e4);var ago=m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' d ago';return'<div><b>'+esc(l.t)+'</b> · '+esc(l.by)+' · '+ago+'</div>'}).join('');
+ d.innerHTML='<div class="dh"><div><div class="id">'+c.id+'</div><h2>'+esc(c.addr)+'</h2></div><button class="x" onclick="closeD()" aria-label="Close">×</button></div><div class="db">'+
+  '<div class="sec kv"><div><small>Client</small>'+esc(c.client)+'</div><div><small>Status</small>'+stChip(c.status)+'</div><div><small>Assignee</small>'+esc(c.who)+'</div><div><small>SLA</small><span class="sla '+slaTxt(c).cls+'" data-id="'+c.id+'">'+slaTxt(c).t+'</span></div></div>'+
+  '<div class="sec"><h3>Documents from client</h3>'+c.docs.map(function(x){return'<div class="doc"><b>'+esc(x)+'</b><span>Uploaded · scan.pdf</span></div>'}).join('')+'</div>'+
+  '<div class="sec"><h3>Checks and grades</h3>'+checks+'</div>'+photos+
+  '<div class="sec">'+act+'</div><div class="sec"><h3>Audit log</h3><div class="log">'+logs+'</div></div></div>';
+}
+function upd(id,fn){var c=find(id);fn(c);drawer(id)}
+function setS(id,k,v){upd(id,function(c){c.f[k].state=+v;if(c.status==='new')c.status='prog'});render()}
+function setG(id,k,g){upd(id,function(c){c.f[k].grade=g;if(c.f[k].state<2&&c.f[k].state!==undefined&&c.f[k].state===0)c.f[k].state=1})}
+function setW(id,k,v){var c=find(id);c.f[k].why=v;var ok=readyToSubmit(c),b=document.getElementById('subBtn'),h=document.getElementById('hint');if(b)b.disabled=!ok;if(h)h.style.display=ok?'none':'block'}
+function submitRev(id){upd(id,function(c){c.status='rev';c.log.push({t:'Submitted for second review',by:'Ada Okafor',at:Date.now()})});render();toast('Submitted for second review')}
+function approve(id){upd(id,function(c){c.status='done';c.released=true;c.log.push({t:'Approved and released to client',by:'Emeka Obi',at:Date.now()})});render();toast('Report released. The client has been notified.')}
+function sendBack(id){upd(id,function(c){c.status='prog';c.log.push({t:'Sent back with comments',by:'Emeka Obi',at:Date.now()})});render();toast('Sent back to the investigator')}
+render();
+setInterval(function(){document.querySelectorAll('[data-id].sla, span.sla[data-id]').forEach(function(el){var c=find(el.getAttribute('data-id'));if(!c)return;var s=slaTxt(c);el.textContent=s.t;el.className='sla '+s.cls})},1000);
+</script>
+</body>
+</html>

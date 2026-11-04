@@ -7,7 +7,7 @@
     "ios": "expo start --ios",
     "android": "expo start --android",
     "web": "expo start --web",
-    "build:web": "expo export --platform web",
+    "build:web": "expo export --platform web && node scripts/postbuild.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

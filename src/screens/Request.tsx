@@ -1,8 +1,8 @@
 import React from 'react';
-import { View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { Screen } from './Layout';
-import { Body, Button, Card, Chip, Field, H1, Muted, Progress, Row, GradePill } from '../ui';
+import { Body, Button, Card, Chip, Field, H1, MapPicker, Muted, Progress, Row } from '../ui';
 import { useStore } from '../store';
 import { CHECKS, DOC_TYPES, PAYMENT_OPTIONS, PROPERTY_TYPES, naira } from '../data';
 import { colors, fonts } from '../theme';
@@ -18,6 +18,10 @@ export function Describe({ navigation }: P<'Describe'>) {
       <H1 style={{ marginBottom: 6 }}>Describe the property</H1>
       <Muted style={{ marginBottom: 20 }}>The more precisely you describe it, the faster the search.</Muted>
       <Field label="Address or location" placeholder="e.g. Plot 14, Okun Ajah, Lagos" value={draft.address} onChangeText={(address) => setDraft({ address })} />
+      <Muted style={{ marginBottom: 8 }}>Pin the location (optional)</Muted>
+      <View style={{ marginBottom: 18 }}>
+        <MapPicker pin={draft.pin} onPick={(pin) => setDraft({ pin })} />
+      </View>
       <Muted style={{ marginBottom: 8 }}>Property type</Muted>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 12 }}>
         {PROPERTY_TYPES.map((t) => (
@@ -118,6 +122,7 @@ export function Review({ navigation }: P<'Review'>) {
       <H1 style={{ marginBottom: 16 }}>Review your request</H1>
       <Card>
         <Row left="Property" right={draft.address} />
+        <Row left="Location" right={draft.pin ? `${draft.pin.lat}, ${draft.pin.lng}` : 'Not pinned'} />
         <Row left="Type" right={draft.type} />
         <Row left="Size" right={draft.size || '—'} />
         <Row left="Documents" right={`${draft.docs.length} (${Object.keys(draft.files).length} attached)`} />
@@ -166,13 +171,26 @@ export function Payment({ navigation }: P<'Payment'>) {
   const { quote, submitCase } = useStore();
   const [sel, setSel] = React.useState('full');
   const q = quote();
+  const [busy, setBusy] = React.useState(false);
   const pay = () => {
-    const id = submitCase(true);
-    navigation.reset({
-      index: 1,
-      routes: [{ name: 'Tabs' }, { name: 'Case', params: { id } }],
-    });
+    setBusy(true);
+    setTimeout(() => {
+      const id = submitCase(true);
+      navigation.reset({
+        index: 1,
+        routes: [{ name: 'Tabs' }, { name: 'Receipt', params: { id } }],
+      });
+    }, 1800);
   };
+  if (busy) {
+    return (
+      <Screen scroll={false} style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color={colors.rust} />
+        <H1 style={{ marginTop: 24, textAlign: 'center' }}>Processing payment…</H1>
+        <Muted style={{ marginTop: 8, textAlign: 'center' }}>Please do not close this page.</Muted>
+      </Screen>
+    );
+  }
   return (
     <Screen footer={<Button title={`Pay ${naira(sel === 'split' ? Math.round(q.total * 0.6) : q.total)}`} onPress={pay} />}>
       <H1 style={{ marginBottom: 6 }}>Payment</H1>

@@ -178,6 +178,94 @@ export function PhotoStrip({ photos }: { photos: string[] }) {
   );
 }
 
+/** Tap-to-pin mock map of Lagos. Stores coordinates as display strings. */
+export function MapPicker({ pin, onPick }: { pin: { lat: string; lng: string } | null; onPick: (p: { lat: string; lng: string }) => void }) {
+  const [size, setSize] = React.useState({ w: 320, h: 190 });
+  const [xy, setXy] = React.useState<{ x: number; y: number } | null>(pin ? { x: size.w * 0.55, y: size.h * 0.45 } : null);
+  return (
+    <View>
+      <View
+        onLayout={(e) => setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}
+        onStartShouldSetResponder={() => true}
+        onResponderRelease={(e) => {
+          const x = e.nativeEvent.locationX, y = e.nativeEvent.locationY;
+          setXy({ x, y });
+          onPick({ lat: (6.62 - (y / size.h) * 0.27).toFixed(4), lng: (3.18 + (x / size.w) * 0.5).toFixed(4) });
+        }}
+        style={{ height: 190, borderRadius: radius.md, backgroundColor: '#E9E0CF', borderWidth: 1, borderColor: colors.line, overflow: 'hidden' }}
+      >
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 44, backgroundColor: '#C9D8DD' }} />
+        <View pointerEvents="none" style={{ position: 'absolute', left: '8%', top: '12%', width: 70, height: 48, borderRadius: 10, backgroundColor: '#D3DDBF' }} />
+        {[18, 46, 74].map((p) => (
+          <View key={'r' + p} pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: `${p}%`, height: 7, backgroundColor: '#fff', opacity: 0.85 }} />
+        ))}
+        {[22, 52, 80].map((p) => (
+          <View key={'c' + p} pointerEvents="none" style={{ position: 'absolute', top: 0, bottom: 0, left: `${p}%`, width: 6, backgroundColor: '#fff', opacity: 0.85 }} />
+        ))}
+        <View pointerEvents="none" style={{ position: 'absolute', left: -20, right: -20, top: '58%', height: 10, backgroundColor: '#F4D675', transform: [{ rotate: '-8deg' }] }} />
+        <View pointerEvents="none" style={{ position: 'absolute', right: 10, bottom: 12 }}>
+          <Text style={{ fontFamily: fonts.bodyMed, fontSize: 11, color: '#6b7f86' }}>Atlantic Ocean</Text>
+        </View>
+        <View pointerEvents="none" style={{ position: 'absolute', left: 12, top: '62%' }}>
+          <Text style={{ fontFamily: fonts.bodyMed, fontSize: 10, color: '#8a6d12' }}>Lekki–Epe Expressway</Text>
+        </View>
+        {xy && (
+          <View pointerEvents="none" style={{ position: 'absolute', left: xy.x - 14, top: xy.y - 34, alignItems: 'center' }}>
+            <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: colors.rust, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#fff' }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' }} />
+            </View>
+            <View style={{ width: 3, height: 8, backgroundColor: colors.rust }} />
+          </View>
+        )}
+        {!xy && (
+          <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ backgroundColor: '#fff', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1, borderColor: colors.line }}>
+              <Text style={{ fontFamily: fonts.bodyMed, fontSize: 13, color: colors.ink }}>Tap the map to drop a pin</Text>
+            </View>
+          </View>
+        )}
+      </View>
+      {pin && <Muted style={{ marginTop: 8 }}>📍 {pin.lat}° N, {pin.lng}° E</Muted>}
+    </View>
+  );
+}
+
+/** Decorative QR-style code, deterministic for a given value (mock; not a scannable QR). */
+export function Qr({ value, size = 168 }: { value: string; size?: number }) {
+  const n = 21;
+  let h = 2166136261;
+  for (let i = 0; i < value.length; i++) { h ^= value.charCodeAt(i); h = Math.imul(h, 16777619); }
+  const rnd = () => { h = (h + 0x6d2b79f5) | 0; let t = Math.imul(h ^ (h >>> 15), 1 | h); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const finder = (r: number, c: number) => {
+    const inBox = (r0: number, c0: number) => r >= r0 && r < r0 + 7 && c >= c0 && c < c0 + 7;
+    for (const [r0, c0] of [[0, 0], [0, n - 7], [n - 7, 0]]) {
+      if (inBox(r0, c0)) {
+        const rr = r - r0, cc = c - c0;
+        return rr === 0 || rr === 6 || cc === 0 || cc === 6 || (rr >= 2 && rr <= 4 && cc >= 2 && cc <= 4);
+      }
+    }
+    return null;
+  };
+  const cell = size / n;
+  const rows = Array.from({ length: n }, (_, r) =>
+    Array.from({ length: n }, (_, c) => {
+      const f = finder(r, c);
+      return f === null ? rnd() > 0.52 : f;
+    }),
+  );
+  return (
+    <View style={{ width: size, height: size, backgroundColor: '#fff', padding: 0 }}>
+      {rows.map((row, r) => (
+        <View key={r} style={{ flexDirection: 'row' }}>
+          {row.map((on, c) => (
+            <View key={c} style={{ width: cell, height: cell, backgroundColor: on ? colors.ink : '#fff' }} />
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   btn: { height: 54, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
   card: { backgroundColor: colors.surface, borderRadius: radius.md, padding: 16, borderWidth: 1, borderColor: colors.line },

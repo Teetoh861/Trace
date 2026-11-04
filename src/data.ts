@@ -109,7 +109,34 @@ export const SITE_PHOTOS: string[] = [];
 
 export const naira = (n: number) => '₦' + n.toLocaleString('en-NG');
 
-export function buildFindings(checks: CheckId[]): Finding[] {
+export function buildFindings(checks: CheckId[], clean = false): Finding[] {
+  const cleanAll: Record<CheckId, Finding> = {
+    title: {
+      id: 'f-title', title: 'Title record', grade: 'confirmed',
+      summary: 'Certificate of Occupancy matches the registry entry.',
+      detail: 'The C of O number, plot description and holder name correspond to the entry in the state land registry.',
+    },
+    survey: {
+      id: 'f-survey', title: 'Survey plan', grade: 'confirmed',
+      summary: 'Survey coordinates match the official record.',
+      detail: 'Your survey plan agrees with the Surveyor-General record to within tolerance. No overlapping beacons were found.',
+    },
+    encumbrance: {
+      id: 'f-enc', title: 'Encumbrances & litigation', grade: 'noadverse',
+      summary: 'No mortgage, lien or court case found in sources searched.',
+      detail: 'High Court and registry indexes were searched. This is not a guarantee that none exists.',
+    },
+    ownership: {
+      id: 'f-own', title: 'Ownership history', grade: 'confirmed',
+      summary: 'Chain of transfers traced to the root of title.',
+      detail: 'Three transfers were traced back to the original grant. Each is supported by a registered instrument.',
+    },
+    physical: {
+      id: 'f-phy', title: 'Physical inspection', grade: 'noadverse',
+      summary: 'Site is vacant and beacons are in place.',
+      detail: 'No occupants or construction were observed. Four beacons were located and photographed.',
+    },
+  };
   const all: Record<CheckId, Finding> = {
     title: {
       id: 'f-title', title: 'Title record', grade: 'confirmed',
@@ -137,8 +164,55 @@ export function buildFindings(checks: CheckId[]): Finding[] {
       detail: 'A third party appears to be building on the north edge. Occupancy should be investigated before proceeding.',
     },
   };
-  return checks.map((c) => all[c]);
+  return checks.map((c) => (clean ? cleanAll[c] : all[c]));
 }
+
+export const NEXT_STEPS: Record<GradeKey, string[]> = {
+  discrepancy: [
+    'Do not pay the seller yet.',
+    'Commission a fresh survey from a licensed surveyor and compare it with the official record.',
+    'Ask a qualified property lawyer to review the discrepancy before you continue.',
+  ],
+  further: [
+    'Visit the site with the seller and a lawyer before you commit funds.',
+    'Ask who is occupying or building on the property, and on what authority.',
+  ],
+  unable: [
+    'Request a physical search at the registry for the missing period.',
+    'Ask the seller for the earlier transfer documents.',
+  ],
+  noadverse: [
+    'Have a lawyer review the documents and draft the sale agreement.',
+    'Consider a re-check close to payment, since records can change.',
+  ],
+  confirmed: [
+    'Proceed with your lawyer and complete the transaction through registered instruments.',
+    'Turn on monitoring to be alerted if a new entry appears against the property.',
+  ],
+};
+
+export type Notif = { id: string; title: string; body: string; when: string; caseId?: string };
+export const NOTIFICATIONS: Notif[] = [
+  { id: 'n1', title: 'Report ready', body: 'Your report for Plot 14, Okun Ajah is ready to read.', when: '2 h ago', caseId: 'TR-20418' },
+  { id: 'n2', title: 'Site inspection scheduled', body: 'An agent will visit 12 Admiralty Way tomorrow morning.', when: 'Yesterday', caseId: 'TR-20425' },
+  { id: 'n3', title: 'Message from Ada', body: 'Quick question about the survey plan you attached.', when: 'Yesterday', caseId: 'TR-20425' },
+  { id: 'n4', title: 'Quote expires soon', body: 'Your draft quote for Epe farmland is valid for 24 more hours.', when: '2 days ago' },
+];
+
+export type Msg = { id: string; from: 'me' | 'inv'; text: string; at: string };
+export const SEED_MESSAGES: Record<string, Msg[]> = {
+  'TR-20425': [
+    { id: 'm1', from: 'inv', text: 'Hi, this is Ada from TRACE. I have received your documents for 12 Admiralty Way.', at: '09:12' },
+    { id: 'm2', from: 'inv', text: 'The survey plan scan is a little blurry in one corner. Could you send a clearer copy?', at: '09:14' },
+    { id: 'm3', from: 'me', text: 'Sure, I will ask the seller and upload it today.', at: '09:31' },
+  ],
+};
+export const AUTO_REPLIES = [
+  'Thanks, noted. I will update the case as soon as I have it.',
+  'Understood. The registry search is on track for the estimated date.',
+  'Good question. I will confirm with the registry and come back to you shortly.',
+  'Received. Nothing else needed from you right now.',
+];
 
 export function overallGrade(f: Finding[]): GradeKey {
   const order: GradeKey[] = ['discrepancy', 'further', 'unable', 'noadverse', 'confirmed'];
@@ -161,22 +235,21 @@ export function conclusionFor(g: GradeKey): string {
   }
 }
 
-export const SEED_CASE: CaseT = (() => {
-  const checks: CheckId[] = ['title', 'survey', 'encumbrance', 'ownership', 'physical'];
-  const findings = buildFindings(checks);
+function seed(
+  id: string, address: string, type: string, size: string, checks: CheckId[],
+  total: number, progress: number, createdAt: string, clean = false,
+): CaseT {
+  const findings = buildFindings(checks, clean);
   const overall = overallGrade(findings);
   return {
-    id: 'TR-20418',
-    address: 'Plot 14, Okun Ajah, Lagos',
-    type: 'Land',
-    size: '600 sqm',
-    checks,
-    total: 175000,
-    paid: true,
-    progress: 6,
-    createdAt: '28 Oct 2026',
-    findings,
-    conclusion: conclusionFor(overall),
-    overall,
+    id, address, type, size, checks, total, paid: true, progress, createdAt,
+    findings, conclusion: conclusionFor(overall), overall,
   };
-})();
+}
+
+export const SEED_CASES: CaseT[] = [
+  seed('TR-20425', '12 Admiralty Way, Lekki Phase 1, Lagos', 'House', '450 sqm', ['title', 'survey', 'physical'], 110250, 3, '1 Nov 2026'),
+  seed('TR-20418', 'Plot 14, Okun Ajah, Lagos', 'Land', '600 sqm', ['title', 'survey', 'encumbrance', 'ownership', 'physical'], 183750, 6, '28 Oct 2026'),
+  seed('TR-20412', 'Farmland, Epe, Lagos', 'Farmland', '2 hectares', ['title', 'survey', 'ownership'], 115500, 6, '19 Oct 2026', true),
+];
+export const SEED_CASE = SEED_CASES[1];

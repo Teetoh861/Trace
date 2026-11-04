@@ -1,9 +1,9 @@
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Switch, Text, View } from 'react-native';
 import { Screen } from './Layout';
 import { Body, Button, Card, Eyebrow, GradePill, H1, H2, Muted, PhotoStrip, Row, SurveyMap, Tag } from '../ui';
 import { useStore } from '../store';
-import { GRADES, GradeKey, INVESTIGATION_STEPS, SITE_PHOTOS, naira } from '../data';
+import { GRADES, GradeKey, INVESTIGATION_STEPS, NEXT_STEPS, SITE_PHOTOS, naira } from '../data';
 import { colors, fonts } from '../theme';
 import { P } from '../nav';
 
@@ -27,6 +27,18 @@ export function CaseScreen({ route, navigation }: P<'Case'>) {
       <Muted style={{ marginBottom: 20 }}>
         {c.type} · {c.size} · {naira(c.total)} {c.paid ? '· Paid' : ''}
       </Muted>
+      <Card style={{ marginBottom: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }} onPress={() => navigation.navigate('Messages', { id: c.id })}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.sand, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontFamily: fonts.bodyBold, color: colors.rust }}>AO</Text>
+          </View>
+          <View>
+            <Text style={{ fontFamily: fonts.bodyBold, fontSize: 15, color: colors.ink }}>Ada Okafor</Text>
+            <Muted>Your investigator</Muted>
+          </View>
+        </View>
+        <Text style={{ fontFamily: fonts.bodyBold, color: colors.rust }}>Message ›</Text>
+      </Card>
       {INVESTIGATION_STEPS.map((s, i) => {
         const state = i < c.progress ? 'done' : i === c.progress ? 'now' : 'todo';
         return (
@@ -58,9 +70,20 @@ export function CaseScreen({ route, navigation }: P<'Case'>) {
 }
 
 export function Report({ route, navigation }: P<'Report'>) {
-  const { cases } = useStore();
+  const { cases, watching, toggleWatch } = useStore();
+  const [note, setNote] = React.useState('');
   const c = cases.find((x) => x.id === route.params.id);
   if (!c) return <Screen><Body>Report not found.</Body></Screen>;
+  const share = async () => {
+    const url = Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.href : 'https://trace.app/report/' + c.id;
+    try {
+      const nav: any = typeof navigator !== 'undefined' ? navigator : null;
+      if (nav?.share) { await nav.share({ title: 'TRACE report ' + c.id, url }); return; }
+      if (nav?.clipboard) { await nav.clipboard.writeText(url); setNote('Link copied to clipboard'); return; }
+      setNote(url);
+    } catch { /* share dismissed */ }
+  };
+  const savePdf = () => { if (Platform.OS === 'web' && typeof window !== 'undefined') window.print(); };
   return (
     <Screen>
       <Eyebrow>Report · {c.id}</Eyebrow>
@@ -69,6 +92,16 @@ export function Report({ route, navigation }: P<'Report'>) {
       <Card style={{ backgroundColor: GRADES[c.overall].color, borderColor: GRADES[c.overall].color }}>
         <Text style={{ fontFamily: fonts.bodyBold, fontSize: 12, color: '#fff', opacity: 0.85, letterSpacing: 1 }}>CONCLUSION</Text>
         <Text style={{ fontFamily: fonts.displayMed, fontSize: 19, color: '#fff', marginTop: 6, lineHeight: 25 }}>{c.conclusion}</Text>
+      </Card>
+
+      <Card style={{ marginTop: 14 }}>
+        <H2 style={{ fontSize: 17, marginBottom: 8 }}>Recommended next steps</H2>
+        {NEXT_STEPS[c.overall].map((t, i) => (
+          <View key={i} style={{ flexDirection: 'row', marginBottom: 6 }}>
+            <Text style={{ fontFamily: fonts.bodyBold, color: colors.rust, width: 20 }}>{i + 1}.</Text>
+            <Body style={{ flex: 1, fontSize: 14 }}>{t}</Body>
+          </View>
+        ))}
       </Card>
 
       <View style={{ marginTop: 24 }}>
@@ -84,6 +117,21 @@ export function Report({ route, navigation }: P<'Report'>) {
       <Pressable onPress={() => navigation.navigate('Grades')}>
         <Muted style={{ marginTop: 8, color: colors.rust, fontFamily: fonts.bodyBold }}>How grades work ›</Muted>
       </Pressable>
+
+      <Card style={{ marginTop: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View style={{ flex: 1, paddingRight: 12 }}>
+          <Text style={{ fontFamily: fonts.bodyBold, fontSize: 15, color: colors.ink }}>Monitor this property</Text>
+          <Muted>Get an alert if a new entry appears against it.</Muted>
+        </View>
+        <Switch value={!!watching[c.id]} onValueChange={() => toggleWatch(c.id)} trackColor={{ true: colors.rust, false: colors.line }} thumbColor="#fff" />
+      </Card>
+
+      <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
+        <Button title="Share" variant="ghost" style={{ flex: 1 }} onPress={share} />
+        <Button title="Save PDF" variant="ghost" style={{ flex: 1 }} onPress={savePdf} />
+        <Button title="Verify" variant="ghost" style={{ flex: 1 }} onPress={() => navigation.navigate('Verify', { id: c.id })} />
+      </View>
+      {note ? <Muted style={{ marginTop: 8 }}>{note}</Muted> : null}
       <Muted style={{ marginTop: 16 }}>
         This report states what the records show in the sources searched. It is not legal advice or a guarantee of title.
       </Muted>
